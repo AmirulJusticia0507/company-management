@@ -1,14 +1,12 @@
 <script setup>
 import { ref } from 'vue'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { useForm, router, usePage } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { useForm, router } from '@inertiajs/vue3'
 
 const props = defineProps({
-    companies: Object
+    companies: Object,
+    flash: Object
 })
-
-const page = usePage()
-const flash = page.props.flash || {}
 
 const showModal = ref(false)
 const editing = ref(false)
@@ -39,9 +37,10 @@ function openEdit(company) {
 
 function submit() {
     if (editing.value) {
-        form.put(route('companies.update', form.id), {
+        form.post(route('companies.update', form.id), {
             forceFormData: true,
-            onSuccess: () => showModal.value = false
+            onSuccess: () => showModal.value = false,
+            _method: 'put'
         })
     } else {
         form.post(route('companies.store'), {
@@ -61,19 +60,15 @@ function destroy(id) {
 <template>
 <AuthenticatedLayout>
     <template #header>
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            Companies
-        </h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Companies</h2>
     </template>
 
-    <div class="p-6 bg-white shadow rounded">
+    <div class="p-6">
         <button @click="openCreate" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">
             Add Company
         </button>
 
-        <div v-if="flash.success" class="mb-4 text-green-600">
-            {{ flash.success }}
-        </div>
+        <div v-if="flash?.success" class="mb-4 text-green-600">{{ flash.success }}</div>
 
         <table class="w-full border">
             <thead class="bg-gray-100">
@@ -118,11 +113,10 @@ function destroy(id) {
             <div class="bg-white p-6 rounded w-96">
                 <h2 class="text-lg font-bold mb-4">{{ editing ? 'Edit Company' : 'Add Company' }}</h2>
                 <form @submit.prevent="submit">
-                    <input v-model="form.name" placeholder="Name" class="border p-2 w-full mb-2" required />
-                    <input v-model="form.email" placeholder="Email" class="border p-2 w-full mb-2" type="email" />
+                    <input v-model="form.name" placeholder="Name" class="border p-2 w-full mb-2" />
+                    <input v-model="form.email" placeholder="Email" class="border p-2 w-full mb-2" />
                     <input v-model="form.website" placeholder="Website" class="border p-2 w-full mb-2" />
                     <input type="file" @change="e => form.logo = e.target.files[0]" class="mb-2" />
-
                     <div class="flex justify-end gap-2">
                         <button type="button" @click="showModal = false" class="px-3 py-1 border">Cancel</button>
                         <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
