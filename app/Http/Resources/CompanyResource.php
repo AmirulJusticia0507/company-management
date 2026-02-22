@@ -13,11 +13,11 @@ class CompanyResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'website' => $this->website,
             'logo_url' => $this->logo
                 ? asset('storage/' . $this->logo)
                 : null,
-            'website' => $this->website,
-            'created_at' => $this->created_at,
+            'created_at' => $this->created_at?->format('Y-m-d H:i'),
         ];
     }
 }
