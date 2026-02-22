@@ -91,6 +91,11 @@ function destroy(id) {
                         <button @click="destroy(employee.id)" class="text-red-600">Delete</button>
                     </td>
                 </tr>
+                <tr v-if="employees.data.length === 0">
+                    <td colspan="5" class="text-center p-4 text-gray-500">
+                        No employees found.
+                    </td>
+                </tr>
             </tbody>
         </table>
 
