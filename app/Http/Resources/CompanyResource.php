@@ -17,7 +17,7 @@ class CompanyResource extends JsonResource
             'logo_url' => $this->logo
                 ? asset('storage/' . $this->logo)
                 : null,
-            'created_at' => $this->created_at?->format('Y-m-d H:i'),
+            'created_at' => $this->created_at->format('Y-m-d H:i'),
         ];
     }
 }

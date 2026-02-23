@@ -1,60 +1,23 @@
-<template>
-<AuthenticatedLayout>
-    <template #header>
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Companies</h2>
-    </template>
-
-    <div class="p-6">
-        <a-button type="primary" @click="openCreate" class="mb-4">Add Company</a-button>
-
-        <div v-if="flash?.success" class="mb-4 text-green-600">{{ flash.success }}</div>
-
-        <a-table
-            :columns="columns"
-            :data-source="companies.data"
-            :row-key="'id'"
-            :pagination="{ current: companies.current_page, total: companies.total, pageSize: companies.per_page }"
-        />
-
-        <!-- Modal -->
-        <a-modal
-            :title="editing ? 'Edit Company' : 'Add Company'"
-            v-model:open="showModal"
-            @ok="submit"
-            @cancel="showModal = false"
-        >
-            <a-form layout="vertical">
-                <a-form-item label="Name">
-                    <a-input v-model:value="form.name" />
-                </a-form-item>
-                <a-form-item label="Email">
-                    <a-input v-model:value="form.email" type="email" />
-                </a-form-item>
-                <a-form-item label="Website">
-                    <a-input v-model:value="form.website" />
-                </a-form-item>
-                <a-form-item label="Logo">
-                    <input type="file" @change="e => form.logo = e.target.files[0]" />
-                </a-form-item>
-            </a-form>
-        </a-modal>
-    </div>
-</AuthenticatedLayout>
-</template>
-
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { useForm, router } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 
 const props = defineProps({
     companies: Object,
-    flash: Object,
+    flash: Object
 })
 
 const showModal = ref(false)
 const editing = ref(false)
-const form = useForm({ id: null, name: '', email: '', website: '', logo: null })
+
+const form = useForm({
+    id: null,
+    name: '',
+    email: '',
+    website: '',
+    logo: null
+})
 
 function openCreate() {
     editing.value = false
@@ -74,24 +37,97 @@ function openEdit(company) {
 
 function submit() {
     if (editing.value) {
-        form.post(route('companies.update', form.id), { forceFormData: true, _method: 'put', onSuccess: () => showModal.value = false })
+        form.put(route('companies.update', form.id), {
+            forceFormData: true,
+            onSuccess: () => showModal.value = false,
+        })
     } else {
-        form.post(route('companies.store'), { forceFormData: true, onSuccess: () => showModal.value = false })
+        form.post(route('companies.store'), {
+            forceFormData: true,
+            onSuccess: () => showModal.value = false,
+        })
     }
 }
 
 function destroy(id) {
-    if (confirm('Delete this company?')) router.delete(route('companies.destroy', id))
+    if (confirm('Delete this company?')) {
+        router.delete(route('companies.destroy', id))
+    }
 }
-
-const columns = [
-    { title: 'Logo', dataIndex: 'logo_url', key: 'logo', customRender: ({ text }) => text ? `<img src="${text}" class="h-10"/>` : '' },
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Website', dataIndex: 'website', key: 'website' },
-    { title: 'Action', key: 'action', customRender: ({ record }) =>
-        `<button class="text-blue-600" @click="openEdit(${record})">Edit</button>
-         <button class="text-red-600" @click="destroy(${record.id})">Delete</button>`
-    },
-]
 </script>
+
+<template>
+<AuthenticatedLayout>
+    <template #header>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Companies</h2>
+    </template>
+
+    <div class="p-6">
+        <button @click="openCreate" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">
+            Add Company
+        </button>
+
+        <div v-if="flash?.success" class="mb-4 text-green-600">{{ flash.success }}</div>
+
+        <table class="w-full border">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-2">Logo</th>
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Email</th>
+                    <th class="p-2">Website</th>
+                    <th class="p-2">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="company in companies.data" :key="company.id" class="border-t">
+                    <td class="p-2">
+                        <img v-if="company.logo" :src="`/storage/${company.logo}`" class="h-10" />
+                    </td>
+                    <td class="p-2">{{ company.name }}</td>
+                    <td class="p-2">{{ company.email }}</td>
+                    <td class="p-2">{{ company.website }}</td>
+                    <td class="p-2 space-x-2">
+                        <button @click="openEdit(company)" class="text-blue-600">Edit</button>
+                        <button @click="destroy(company.id)" class="text-red-600">Delete</button>
+                    </td>
+                </tr>
+                <tr v-if="companies.data.length === 0">
+                    <td colspan="5" class="text-center p-4 text-gray-500">
+                        No companies found.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="mt-4 flex gap-2">
+            <button
+                v-for="link in companies.links"
+                :key="link.label"
+                v-html="link.label"
+                :disabled="!link.url"
+                @click="router.visit(link.url)"
+                class="px-3 py-1 border rounded"
+            />
+        </div>
+
+        <!-- Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <div class="bg-white p-6 rounded w-96">
+                <h2 class="text-lg font-bold mb-4">{{ editing ? 'Edit Company' : 'Add Company' }}</h2>
+                <form @submit.prevent="submit">
+                    <input v-model="form.name" placeholder="Name" class="border p-2 w-full mb-2" />
+                    <input v-model="form.email" placeholder="Email" class="border p-2 w-full mb-2" />
+                    <input v-model="form.website" placeholder="Website" class="border p-2 w-full mb-2" />
+                    <input type="file" @change="e => form.logo = e.target.files[0]" class="mb-2" />
+                    <div class="flex justify-end gap-2">
+                        <button type="button" @click="showModal = false" class="px-3 py-1 border">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</AuthenticatedLayout>
+</template>

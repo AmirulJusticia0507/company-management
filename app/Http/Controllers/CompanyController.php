@@ -3,55 +3,72 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Http\Resources\CompanyResource;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Http\Requests\StoreCompanyRequest;
-use App\Http\Requests\UpdateCompanyRequest;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $companies = Company::latest()->paginate(10);
 
         return Inertia::render('Companies/Index', [
-            'companies' => $companies
+            'companies' => CompanyResource::collection($companies),
         ]);
     }
 
-    public function store(StoreCompanyRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email',
+            'website' => 'nullable|url',
+            'logo' => 'nullable|image|max:2048',
+        ]);
+
+        $company = new Company();
+        $company->name = $request->name;
+        $company->email = $request->email;
+        $company->website = $request->website;
 
         if ($request->hasFile('logo')) {
-            $data['logo'] = $request->file('logo')
-                ->store('companies', 'public');
+            $company->logo = $request->file('logo')->store('companies', 'public');
         }
 
-        Company::create($data);
+        $company->save();
 
-        return redirect()->back()->with('success', 'Company created successfully');
+        return redirect()->route('companies.index')
+            ->with('success', 'Company created successfully.');
     }
 
-    public function update(UpdateCompanyRequest $request, Company $company)
+    public function update(Request $request, Company $company)
     {
-        $data = $request->validated();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email',
+            'website' => 'nullable|url',
+            'logo' => 'nullable|image|max:2048',
+        ]);
+
+        $company->name = $request->name;
+        $company->email = $request->email;
+        $company->website = $request->website;
 
         if ($request->hasFile('logo')) {
 
-            // hapus logo lama jika ada
             if ($company->logo) {
                 Storage::disk('public')->delete($company->logo);
             }
 
-            $data['logo'] = $request->file('logo')
-                ->store('companies', 'public');
+            $company->logo = $request->file('logo')->store('companies', 'public');
         }
 
-        $company->update($data);
+        $company->save();
 
-        return redirect()->back()->with('success', 'Company updated successfully');
+        return redirect()->route('companies.index')
+            ->with('success', 'Company updated successfully.');
     }
 
     public function destroy(Company $company)
@@ -62,6 +79,7 @@ class CompanyController extends Controller
 
         $company->delete();
 
-        return redirect()->back()->with('success', 'Company deleted successfully');
+        return redirect()->route('companies.index')
+            ->with('success', 'Company deleted successfully.');
     }
 }
